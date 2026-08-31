@@ -1,13 +1,32 @@
-- name: Faster HACS Action
-  # You may pin to the exact commit or the version.
-  # uses: TheRealWaldo/faster-hacs-action@976870a428e502b370bca63ee32e599f015d9977
-  uses: TheRealWaldo/faster-hacs-action@v0.0.4
-  with:
-    # Github token for github
-    github-token: # default is ${{ github.token }}
-    # A space separated list of ignored checks, for valid entries see README.md
-    ignore: # optional, default is 
-    # The category of repository
-    category: 
-    # Post a comment to the PR with the result of the checks
-    comment: # optional, default is true
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hacs/action@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          category: integration
+          # ignore: brands
