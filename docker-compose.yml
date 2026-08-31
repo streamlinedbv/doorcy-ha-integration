@@ -1,0 +1,15 @@
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    container_name: doorcy-ha-dev
+    restart: unless-stopped
+    ports:
+      - "8123:8123"
+    environment:
+      TZ: Africa/Tunis
+    volumes:
+      # HA's own config + database. Persists across restarts.
+      - ./config:/config
+      # The integration, live-mounted. Edit on the host, restart the
+      # container, and HA picks up the new code.
+      - ./custom_components/doorcy:/config/custom_components/doorcy

@@ -1,0 +1,5 @@
+.DS_Store
+config/*.log
+config/.storage/
+config/home-assistant_v2.db*
+__pycache__/
