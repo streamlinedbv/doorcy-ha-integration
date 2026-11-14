@@ -12,3 +12,8 @@ async def async_get_authorization_server(hass: HomeAssistant) -> AuthorizationSe
         authorize_url=OAUTH2_AUTHORIZE,
         token_url=OAUTH2_TOKEN,
     )
+
+
+async def async_get_description_placeholders(hass: HomeAssistant) -> dict[str, str]:
+    """Fill the redirect URI into the application credentials description."""
+    return {"redirect_uri": "https://my.home-assistant.io/redirect/oauth"}

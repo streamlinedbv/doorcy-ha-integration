@@ -143,3 +143,14 @@ async def test_reauth_replaces_the_old_entry_data(
     assert entry.data["token"]["access_token"] == "a2"
     assert entry.unique_id == "uuid-1"
     assert "password" not in entry.data
+
+
+async def test_application_credentials_description_has_the_redirect_uri(
+    hass: HomeAssistant,
+) -> None:
+    from custom_components.doorcy.application_credentials import (
+        async_get_description_placeholders,
+    )
+
+    placeholders = await async_get_description_placeholders(hass)
+    assert placeholders["redirect_uri"] == "https://my.home-assistant.io/redirect/oauth"
