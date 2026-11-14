@@ -5,20 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DoorcyCoordinator
-
-
-def _is_active(value: Any) -> bool:
-    """The API sends "true"/"false" as strings, not JSON booleans."""
-    if isinstance(value, bool):
-        return value
-    return str(value).strip().lower() == "true"
 
 
 async def async_setup_entry(
@@ -28,7 +21,16 @@ async def async_setup_entry(
 ) -> None:
     """Create one switch per scene."""
     coordinator: DoorcyCoordinator = entry.runtime_data
-    async_add_entities(DoorcyScene(coordinator, guid) for guid in coordinator.data)
+    known: set[str] = set()
+
+    @callback
+    def _add_new() -> None:
+        new = [guid for guid in coordinator.data if guid not in known]
+        known.update(new)
+        async_add_entities(DoorcyScene(coordinator, guid) for guid in new)
+
+    _add_new()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new))
 
 
 class DoorcyScene(CoordinatorEntity[DoorcyCoordinator], SwitchEntity):
@@ -63,7 +65,7 @@ class DoorcyScene(CoordinatorEntity[DoorcyCoordinator], SwitchEntity):
 
     @property
     def is_on(self) -> bool:
-        return _is_active(self._scene.get("active"))
+        return bool(self._scene.get("active"))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -71,10 +73,13 @@ class DoorcyScene(CoordinatorEntity[DoorcyCoordinator], SwitchEntity):
 
     async def _async_set(self, on: bool) -> None:
         await self.coordinator.client.async_set_scene(self._device_id, self._guid, on)
-        # Reflect it immediately; the next poll confirms.
-        self._scene["active"] = "true" if on else "false"
-        self.async_write_ha_state()
-        await self.coordinator.async_request_refresh()
+        # Reflect it immediately; the live message confirms (or corrects) it.
+        self.coordinator.async_set_updated_data(
+            {
+                **self.coordinator.data,
+                self._guid: {**self._scene, "active": on},
+            }
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._async_set(True)

@@ -1,28 +1,48 @@
 {
   "config": {
     "step": {
-      "user": {
-        "description": "Sign in with your Doorcy account.",
-        "data": {
-          "username": "Username",
-          "password": "Password"
-        }
+      "pick_implementation": {
+        "title": "Pick a sign-in method"
       },
       "reauth_confirm": {
-        "description": "The password for {username} is no longer valid. Enter it again.",
-        "data": {
-          "password": "Password"
-        }
+        "title": "Sign in to Doorcy again",
+        "description": "The Doorcy integration now signs in with your Doorcy account instead of a stored password. Sign in once more to continue."
       }
-    },
-    "error": {
-      "cannot_connect": "Failed to connect to Doorcy.",
-      "invalid_auth": "Invalid username or password.",
-      "unknown": "Unexpected error."
     },
     "abort": {
       "already_configured": "This Doorcy account is already set up.",
-      "reauth_successful": "Doorcy was reauthenticated successfully."
+      "reauth_successful": "Doorcy was reauthenticated successfully.",
+      "oauth_failed": "Signing in to Doorcy failed.",
+      "cannot_connect": "Failed to connect to Doorcy.",
+      "oauth2_missing_configuration": "Add the Doorcy application credentials first (Settings > Devices & services > Application credentials).",
+      "oauth2_missing_credentials": "Add the Doorcy application credentials first (Settings > Devices & services > Application credentials).",
+      "oauth2_authorize_url_timeout": "Timeout generating the authorize URL.",
+      "oauth2_no_url_available": "No URL available to sign in. Check that Home Assistant has an external URL or use My Home Assistant.",
+      "oauth2_error": "Received invalid token data.",
+      "oauth2_failed": "Signing in failed.",
+      "oauth2_timeout": "Timeout while signing in.",
+      "oauth2_unauthorized": "Not authorized.",
+      "oauth2_implementation_unavailable": "The sign-in method is not available yet. Try again later."
+    },
+    "create_entry": {
+      "default": "Successfully authenticated."
     }
+  },
+  "entity": {
+    "event": {
+      "scene_started": {
+        "name": "{scene} started",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "scene_started": "Started"
+            }
+          }
+        }
+      }
+    }
+  },
+  "application_credentials": {
+    "description": "Create an OAuth application in Doorcy (authorization code, redirect URI `https://my.home-assistant.io/redirect/oauth`) and enter its client ID and client secret."
   }
 }
