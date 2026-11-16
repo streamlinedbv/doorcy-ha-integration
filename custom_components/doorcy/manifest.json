@@ -2,7 +2,7 @@
   "domain": "doorcy",
   "name": "Doorcy",
   "codeowners": [
-    "@haythemd"
+    "@streamlinedbv"
   ],
   "config_flow": true,
   "dependencies": [
@@ -13,5 +13,5 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/streamlinedbv/doorcy-ha-integration/issues",
   "requirements": [],
-  "version": "0.1.2"
+  "version": "1.2.0"
 }
