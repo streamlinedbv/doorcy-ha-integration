@@ -3,3 +3,6 @@ config/*.log
 config/.storage/
 config/home-assistant_v2.db*
 __pycache__/
+
+__pycache__/
+.pytest_cache/

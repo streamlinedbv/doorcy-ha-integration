@@ -1,4 +1,4 @@
-"""Config flow for Doorcy (username / password)."""
+"""Config flow for Doorcy (OAuth)."""
 
 from __future__ import annotations
 
@@ -6,90 +6,71 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
-import voluptuous as vol
-
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigFlowResult
+from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import DoorcyAuthError, DoorcyClient, DoorcyConnectionError
-from .const import DOMAIN
+from .api import DoorcyAccessDeniedError, DoorcyAuthError, DoorcyClient, DoorcyConnectionError
+from .const import DOMAIN, OAUTH2_SCOPE
 
 _LOGGER = logging.getLogger(__name__)
 
-STEP_USER_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
-    }
-)
 
-
-class DoorcyConfigFlow(ConfigFlow, domain=DOMAIN):
+class DoorcyConfigFlow(
+    config_entry_oauth2_flow.AbstractOAuth2FlowHandler, domain=DOMAIN
+):
     """Handle the Doorcy config flow."""
 
-    VERSION = 1
+    DOMAIN = DOMAIN
+    VERSION = 2
 
-    async def _async_validate(self, data: Mapping[str, Any]) -> dict[str, str]:
-        """Try the credentials, return a dict of form errors (empty if fine)."""
-        client = DoorcyClient(
-            async_get_clientsession(self.hass),
-            data[CONF_USERNAME],
-            data[CONF_PASSWORD],
-        )
-        try:
-            await client.async_login()
-        except DoorcyAuthError:
-            return {"base": "invalid_auth"}
-        except DoorcyConnectionError:
-            return {"base": "cannot_connect"}
-        except Exception:  # noqa: BLE001
-            _LOGGER.exception("Unexpected error validating Doorcy credentials")
-            return {"base": "unknown"}
-        return {}
+    @property
+    def logger(self) -> logging.Logger:
+        return _LOGGER
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Initial setup step."""
-        errors: dict[str, str] = {}
-
-        if user_input is not None:
-            await self.async_set_unique_id(user_input[CONF_USERNAME].lower())
-            self._abort_if_unique_id_configured()
-
-            errors = await self._async_validate(user_input)
-            if not errors:
-                return self.async_create_entry(
-                    title=user_input[CONF_USERNAME], data=user_input
-                )
-
-        return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_SCHEMA, errors=errors
-        )
+    @property
+    def extra_authorize_data(self) -> dict[str, Any]:
+        return {"scope": OAUTH2_SCOPE}
 
     async def async_step_reauth(
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
-        """Triggered when the stored password stops working."""
+        """Sign in again (password login of version 0.1.x, or a revoked link)."""
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Ask for a fresh password."""
-        errors: dict[str, str] = {}
-        entry = self._get_reauth_entry()
+        if user_input is None:
+            return self.async_show_form(step_id="reauth_confirm")
+        return await self.async_step_user()
 
-        if user_input is not None:
-            new_data = {**entry.data, CONF_PASSWORD: user_input[CONF_PASSWORD]}
-            errors = await self._async_validate(new_data)
-            if not errors:
-                return self.async_update_reload_and_abort(entry, data=new_data)
+    async def async_oauth_create_entry(self, data: dict[str, Any]) -> ConfigFlowResult:
+        """Name the entry after the account that just signed in."""
+        access_token = data["token"]["access_token"]
 
-        return self.async_show_form(
-            step_id="reauth_confirm",
-            data_schema=vol.Schema({vol.Required(CONF_PASSWORD): str}),
-            description_placeholders={CONF_USERNAME: entry.data[CONF_USERNAME]},
-            errors=errors,
-        )
+        async def _token() -> str:
+            return access_token
+
+        client = DoorcyClient(async_get_clientsession(self.hass), _token)
+        try:
+            account = await client.async_get_account()
+        except DoorcyAuthError:
+            return self.async_abort(reason="oauth_failed")
+        except (DoorcyConnectionError, DoorcyAccessDeniedError):
+            return self.async_abort(reason="cannot_connect")
+
+        unique_id = str(account.get("uuid") or account.get("id") or "")
+        if not unique_id:
+            return self.async_abort(reason="oauth_failed")
+        title = account.get("email") or unique_id
+
+        if self.source == SOURCE_REAUTH:
+            # data= replaces the old username/password data completely.
+            return self.async_update_reload_and_abort(
+                self._get_reauth_entry(), unique_id=unique_id, title=title, data=data
+            )
+
+        await self.async_set_unique_id(unique_id)
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(title=title, data=data)
