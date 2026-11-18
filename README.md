@@ -12,8 +12,7 @@ docker compose up -d
 ```
 
 Open <http://localhost:8123>, create the local owner account (first run only),
-then add the application credentials and **Add Integration → Doorcy** as
-described under *Signing in*.
+then **Add Integration → Doorcy** as described under *Signing in*.
 
 First boot takes 30–60 seconds while HA builds its database.
 
@@ -35,19 +34,30 @@ The integration signs in with OAuth, like the Doorcy Homey app. No password
 is stored in Home Assistant, the access token expires and is renewed by Home
 Assistant, and the link can be revoked in Doorcy.
 
-1. In Home Assistant: **Settings → Devices & services → Application
-   credentials → Add**, pick Doorcy and enter the client ID and client secret
-   of the Doorcy OAuth application made for Home Assistant (redirect URI
-   `https://my.home-assistant.io/redirect/oauth`, scope `full`).
-2. **Add Integration → Doorcy**, sign in to Doorcy in the browser and allow
-   access.
+1. In Home Assistant: **Settings → Devices & services → Add integration →
+   Doorcy**.
+2. Sign in to Doorcy in the browser and allow access.
+
+There is no client ID or secret to enter. The integration signs in as the
+public Doorcy OAuth client `doorcy-home-assistant` with PKCE (S256): there is
+no secret that could leak from this public repository, and a stolen
+authorization code is useless without the verifier that only your Home
+Assistant holds.
+
+### Own application credentials (optional, before 1.3.0 required)
+
+Up to 1.2.0 you had to create credentials under **Application credentials**.
+Entries made that way keep working unchanged and are not asked to sign in
+again: the credentials stay registered and the entry refreshes with them. If
+you still have such credentials, **Add integration** first asks which sign-in
+to use; pick *Doorcy account* unless you want your own application (redirect
+URI `https://my.home-assistant.io/redirect/oauth`, scope `full`).
 
 ### Upgrading from 0.1.x
 
 Version 0.1.x stored the Doorcy username and password. After the upgrade the
 stored password is removed and Home Assistant asks you once to sign in again
-(a *Reauthentication* notice on the integration). Add the application
-credentials first (see above), then follow the notice.
+(a *Reauthentication* notice on the integration). Follow the notice and sign in.
 
 ## How it works
 

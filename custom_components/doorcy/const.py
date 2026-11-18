@@ -7,6 +7,9 @@ WS_URL = "wss://api.doorcy.nl/ws/home-assistant"
 OAUTH2_AUTHORIZE = "https://api.doorcy.nl/oauth/authorize/"
 OAUTH2_TOKEN = "https://api.doorcy.nl/oauth/token/"
 OAUTH2_SCOPE = "full"
+# Public OAuth client of this integration (no secret, PKCE S256). The client
+# ID is not a secret: it is the same for every Home Assistant installation.
+OAUTH2_CLIENT_ID = "doorcy-home-assistant"
 
 # Keep the websocket alive: the server drops group membership after 24 hours
 # unless it hears from us, so ping well inside that.

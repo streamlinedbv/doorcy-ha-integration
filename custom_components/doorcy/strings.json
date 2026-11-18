@@ -2,7 +2,8 @@
   "config": {
     "step": {
       "pick_implementation": {
-        "title": "Pick a sign-in method"
+        "title": "Pick a sign-in method",
+        "description": "Choose \"Doorcy account\" unless you made your own Doorcy OAuth application."
       },
       "reauth_confirm": {
         "title": "Sign in to Doorcy again",
@@ -14,8 +15,8 @@
       "reauth_successful": "Doorcy was reauthenticated successfully.",
       "oauth_failed": "Signing in to Doorcy failed.",
       "cannot_connect": "Failed to connect to Doorcy.",
-      "oauth2_missing_configuration": "Add the Doorcy application credentials first (Settings > Devices & services > Application credentials).",
-      "oauth2_missing_credentials": "Add the Doorcy application credentials first (Settings > Devices & services > Application credentials).",
+      "oauth2_missing_configuration": "Signing in is not set up. Restart Home Assistant and try again.",
+      "oauth2_missing_credentials": "Signing in is not set up. Restart Home Assistant and try again.",
       "oauth2_authorize_url_timeout": "Timeout generating the authorize URL.",
       "oauth2_no_url_available": "No URL available to sign in. Check that Home Assistant has an external URL or use My Home Assistant.",
       "oauth2_error": "Received invalid token data.",
@@ -43,6 +44,6 @@
     }
   },
   "application_credentials": {
-    "description": "Create an OAuth application in Doorcy (authorization code, redirect URI {redirect_uri}) and enter its client ID and client secret."
+    "description": "Optional. Adding the integration needs no credentials; only enter your own Doorcy OAuth application (authorization code, redirect URI {redirect_uri}) if you want to sign in with it. Its client ID and client secret are asked below."
   }
 }

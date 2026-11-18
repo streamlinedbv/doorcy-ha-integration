@@ -15,6 +15,7 @@ from homeassistant.exceptions import (
     ConfigEntryNotReady,
 )
 from homeassistant.helpers import config_entry_oauth2_flow
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import (
@@ -25,12 +26,23 @@ from .api import (
 )
 from .const import DOMAIN, TOKEN_RENEW_MARGIN
 from .coordinator import DoorcyCoordinator
+from .oauth import async_register_built_in
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SWITCH, Platform.EVENT]
 
 type DoorcyConfigEntry = ConfigEntry[DoorcyCoordinator]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the built-in sign-in (public client, PKCE).
+
+    Application credentials a user entered earlier stay available next to
+    it, so entries made with them keep loading and refreshing.
+    """
+    async_register_built_in(hass)
+    return True
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
